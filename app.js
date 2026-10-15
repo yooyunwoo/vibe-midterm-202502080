@@ -52,6 +52,8 @@
     currentRotation: 0,
     isSpinning: false,
     lastResult: null,
+    resultItemId: null,
+    highlightStartedAt: 0,
     toastTimer: null,
   };
 
@@ -225,6 +227,9 @@
       context.lineWidth = Math.max(2, size / 170);
       context.stroke();
       drawLabel(item, start + slice / 2, radius, size);
+      if (item.id === state.resultItemId) {
+        drawResultHighlight(start, end, radius, size);
+      }
       angleOffset += slice;
     });
     context.restore();
@@ -246,6 +251,30 @@
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText("✦", center, center);
+  }
+
+  function drawResultHighlight(start, end, radius, size) {
+    const elapsed = Math.max(0, performance.now() - state.highlightStartedAt);
+    const pulse = elapsed < 1100 ? (1 + Math.sin(elapsed / 1000 * Math.PI * 4)) / 2 : 0;
+    const lineWidth = Math.max(4, size / 45) + pulse * Math.max(3, size / 65);
+    context.save();
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.arc(0, 0, radius - lineWidth / 2, start, end);
+    context.closePath();
+    context.strokeStyle = `rgba(255, 255, 255, ${0.82 + pulse * 0.18})`;
+    context.lineWidth = lineWidth;
+    context.shadowColor = `rgba(139, 111, 97, ${0.3 + pulse * 0.45})`;
+    context.shadowBlur = 7 + pulse * 12;
+    context.stroke();
+    context.restore();
+  }
+
+  function animateHighlight() {
+    drawWheel();
+    if (performance.now() - state.highlightStartedAt < 1100) {
+      requestAnimationFrame(animateHighlight);
+    }
   }
 
   function drawLabel(item, angle, radius, size) {
@@ -272,6 +301,7 @@
     if (state.isSpinning || items.length < 2) return;
     state.isSpinning = true;
     state.lastResult = null;
+    state.resultItemId = null;
     renderOptions();
     elements.spinLabel.textContent = "고르는 중...";
     elements.spinStatus.textContent = "룰렛이 회전 중입니다. 잠시만 기다려 주세요.";
@@ -309,6 +339,8 @@
   function finishSpin(item) {
     state.isSpinning = false;
     state.lastResult = item.label;
+    state.resultItemId = item.id;
+    state.highlightStartedAt = performance.now();
     elements.spinLabel.textContent = "룰렛 돌리기";
     elements.spinStatus.textContent = `결과는 ${state.lastResult}입니다.`;
     elements.resultTitle.textContent = state.lastResult;
@@ -319,6 +351,7 @@
     window.setTimeout(() => elements.resultCard.classList.remove("result-reveal"), 600);
     renderOptions();
     drawWheel();
+    animateHighlight();
   }
 
   function getPresets() {
