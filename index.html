@@ -33,16 +33,12 @@
               </div>
               <span class="status-pill" id="item-count">0 / 50</span>
             </div>
-            <label class="sr-only" for="options-input">룰렛 선택지</label>
-            <textarea
-              id="options-input"
-              rows="8"
-              maxlength="2000"
-              placeholder="한 줄에 하나씩 입력해 주세요&#10;&#10;김치찌개&#10;돈까스&#10;초밥"
-              spellcheck="false"
-            ></textarea>
+            <div class="options-list" id="options-list" aria-label="룰렛 선택지 목록"></div>
+            <button class="add-option-button clay-button" id="add-option" type="button">
+              <span aria-hidden="true">＋</span> 선택지 추가
+            </button>
             <div class="input-footer">
-              <p class="hint" id="input-hint">최소 2개부터 시작할 수 있어요.</p>
+              <p class="hint" id="input-hint">선택지마다 가중치와 색상을 정할 수 있어요.</p>
               <button class="text-button" id="clear-options" type="button">전체 지우기</button>
             </div>
             <div class="preview-list" id="options-preview" aria-label="현재 선택지 목록"></div>

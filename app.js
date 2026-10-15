@@ -16,7 +16,8 @@
 
   const elements = {
     canvas: document.querySelector("#roulette-canvas"),
-    input: document.querySelector("#options-input"),
+    optionsList: document.querySelector("#options-list"),
+    addOption: document.querySelector("#add-option"),
     count: document.querySelector("#item-count"),
     hint: document.querySelector("#input-hint"),
     preview: document.querySelector("#options-preview"),
@@ -74,69 +75,106 @@
     }
   }
 
-  function normalizeOptions(value) {
-    const candidates = value
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    return [...new Set(candidates)];
+  function createOption(label = "", weight = 1, color = COLORS[0], id = createId()) {
+    return { id, label, weight: Math.max(0.1, Math.min(100, Number(weight) || 1)), color: COLORS.includes(color) ? color : COLORS[0] };
   }
 
   function sanitizeStoredOptions(value) {
     if (!Array.isArray(value)) return [];
-    return normalizeOptions(value.filter((item) => typeof item === "string").join("\n")).slice(0, MAX_ITEMS);
-  }
-
-  function readOptions() {
-    const normalized = normalizeOptions(elements.input.value);
-    const hasTooMany = normalized.length > MAX_ITEMS;
-    state.items = hasTooMany ? normalized.slice(0, MAX_ITEMS) : normalized;
-    if (hasTooMany) {
-      elements.hint.textContent = `선택지는 최대 ${MAX_ITEMS}개까지 입력할 수 있어요. 초과 항목은 반영되지 않았어요.`;
-      elements.hint.classList.add("error");
-    } else {
-      elements.hint.classList.remove("error");
-    }
-    return hasTooMany;
+    const seen = new Set();
+    return value.map((item, index) => {
+      const label = typeof item === "string" ? item.trim() : typeof item?.label === "string" ? item.label.trim() : "";
+      if (!label || seen.has(label)) return null;
+      seen.add(label);
+      return createOption(label, item?.weight, item?.color || COLORS[index % COLORS.length], item?.id || createId());
+    }).filter(Boolean).slice(0, MAX_ITEMS);
   }
 
   function syncOptions() {
-    const wasTooMany = readOptions();
     renderOptions();
-    if (!wasTooMany) {
-      safeWrite(STORAGE_KEYS.options, state.items);
-    }
+    safeWrite(STORAGE_KEYS.options, sanitizeStoredOptions(state.items));
     drawWheel();
   }
 
   function renderOptions() {
     const count = state.items.length;
+    const usableItems = state.items.filter((item) => item.label.trim());
+    const usableCount = usableItems.length;
     elements.count.textContent = `${count} / ${MAX_ITEMS}`;
     elements.count.setAttribute("aria-label", `선택지 ${count}개`);
-    elements.preview.replaceChildren();
-    state.items.slice(0, 8).forEach((item) => {
-      const chip = document.createElement("span");
-      chip.className = "option-chip";
-      chip.textContent = item;
-      elements.preview.append(chip);
+    elements.optionsList.replaceChildren();
+    const totalWeight = state.items.reduce((sum, item) => sum + item.weight, 0);
+    state.items.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "option-row";
+      row.dataset.id = item.id;
+      const number = document.createElement("span");
+      number.className = "option-number";
+      number.textContent = `${index + 1}.`;
+      const label = document.createElement("input");
+      label.type = "text"; label.value = item.label; label.maxLength = 80;
+      label.placeholder = "선택지 입력"; label.setAttribute("aria-label", `${index + 1}번 선택지`);
+      label.addEventListener("input", () => updateOption(item.id, { label: label.value }));
+      const weightControl = document.createElement("label");
+      weightControl.className = "weight-control";
+      weightControl.title = `확률 ${Math.round(item.weight / totalWeight * 100)}%`;
+      const weight = document.createElement("input");
+      weight.type = "number"; weight.min = "0.1"; weight.max = "100"; weight.step = "0.1"; weight.value = item.weight;
+      weight.setAttribute("aria-label", `${index + 1}번 가중치`);
+      weight.addEventListener("input", () => updateOption(item.id, { weight: weight.value }));
+      const percent = document.createElement("span");
+      percent.textContent = `${Math.round(item.weight / totalWeight * 100)}%`;
+      weightControl.append(weight, percent);
+      const colorLabel = document.createElement("label");
+      colorLabel.className = "color-picker";
+      colorLabel.style.backgroundColor = item.color;
+      colorLabel.title = "색상 선택";
+      const color = document.createElement("input");
+      color.type = "color"; color.value = item.color; color.setAttribute("aria-label", `${index + 1}번 색상`);
+      color.addEventListener("input", () => updateOption(item.id, { color: color.value }, colorLabel));
+      colorLabel.append(color);
+      const remove = document.createElement("button");
+      remove.type = "button"; remove.className = "delete-option"; remove.textContent = "×";
+      remove.setAttribute("aria-label", `${index + 1}번 선택지 삭제`);
+      remove.disabled = count <= 1 || state.isSpinning;
+      remove.addEventListener("click", () => removeOption(item.id));
+      row.append(number, label, weightControl, colorLabel, remove);
+      elements.optionsList.append(row);
     });
-    if (count > 8) {
-      const more = document.createElement("span");
-      more.className = "option-chip more";
-      more.textContent = `+${count - 8}개 더`;
-      elements.preview.append(more);
-    }
-    elements.spin.disabled = count < 2 || state.isSpinning;
-    elements.savePreset.disabled = count < 1 || state.isSpinning;
+    elements.spin.disabled = usableCount < 2 || state.isSpinning;
+    elements.savePreset.disabled = usableCount < 1 || state.isSpinning;
     elements.clear.disabled = count === 0 || state.isSpinning;
-    elements.emptyWheel.hidden = count > 0;
+    elements.addOption.disabled = count >= MAX_ITEMS || state.isSpinning;
+    elements.emptyWheel.hidden = usableCount > 0;
     if (!state.isSpinning) {
-      if (count < 2) {
-        elements.hint.textContent = count === 0 ? "최소 2개부터 시작할 수 있어요." : "한 가지 선택지가 더 필요해요.";
+      if (usableCount < 2) {
+        elements.hint.textContent = usableCount === 0 ? "최소 2개의 선택지를 입력해 주세요." : "한 가지 선택지가 더 필요해요.";
       } else if (!elements.hint.classList.contains("error")) {
         elements.hint.textContent = "룰렛을 돌릴 수 있어요.";
       }
+
     }
+  }
+
+  function updateOption(id, patch, colorLabel) {
+    const item = state.items.find((entry) => entry.id === id);
+    if (!item) return;
+    Object.assign(item, patch);
+    if ("label" in patch) item.label = String(patch.label).trimStart();
+    if ("weight" in patch) item.weight = Math.max(0.1, Math.min(100, Number(patch.weight) || 0.1));
+    if (colorLabel) colorLabel.style.backgroundColor = item.color;
+    safeWrite(STORAGE_KEYS.options, sanitizeStoredOptions(state.items));
+    drawWheel();
+    const totalWeight = state.items.reduce((sum, entry) => sum + entry.weight, 0);
+    const row = elements.optionsList.querySelector(`[data-id="${id}"]`);
+    const percent = row?.querySelector(".weight-control span");
+    if (percent) percent.textContent = `${Math.round(item.weight / totalWeight * 100)}%`;
+  }
+
+  function removeOption(id) {
+    if (state.items.length <= 2 || state.isSpinning) return;
+    state.items = state.items.filter((item) => item.id !== id);
+    syncOptions();
   }
 
   function resizeCanvas() {
@@ -155,24 +193,28 @@
     const center = size / 2;
     const radius = center - 8;
     context.clearRect(0, 0, size, size);
-    if (!state.items.length) return;
-    const slice = TAU / state.items.length;
+    const items = state.items.filter((item) => item.label.trim());
+    if (!items.length) return;
+    const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+    let angleOffset = 0;
     context.save();
     context.translate(center, center);
     context.rotate(state.currentRotation);
-    state.items.forEach((item, index) => {
-      const start = -Math.PI / 2 + index * slice;
+    items.forEach((item) => {
+      const slice = TAU * item.weight / totalWeight;
+      const start = -Math.PI / 2 + angleOffset;
       const end = start + slice;
       context.beginPath();
       context.moveTo(0, 0);
       context.arc(0, 0, radius, start, end);
       context.closePath();
-      context.fillStyle = COLORS[index % COLORS.length];
+      context.fillStyle = item.color;
       context.fill();
       context.strokeStyle = "rgba(255,255,255,.8)";
       context.lineWidth = Math.max(2, size / 170);
       context.stroke();
       drawLabel(item, start + slice / 2, radius, size);
+      angleOffset += slice;
     });
     context.restore();
     context.beginPath();
@@ -200,7 +242,7 @@
     const x = Math.cos(angle) * labelRadius;
     const y = Math.sin(angle) * labelRadius;
     const maxLength = state.items.length > 12 ? 8 : 12;
-    const label = item.length > maxLength ? `${item.slice(0, maxLength)}…` : item;
+    const label = item.label.length > maxLength ? `${item.label.slice(0, maxLength)}…` : item.label;
     context.save();
     context.translate(x, y);
     let textAngle = angle + Math.PI / 2;
@@ -215,15 +257,23 @@
   }
 
   function spin() {
-    if (state.isSpinning || state.items.length < 2) return;
+    const items = state.items.filter((item) => item.label.trim());
+    if (state.isSpinning || items.length < 2) return;
     state.isSpinning = true;
     state.lastResult = null;
     renderOptions();
     elements.spinLabel.textContent = "고르는 중...";
     elements.spinStatus.textContent = "룰렛이 회전 중입니다. 잠시만 기다려 주세요.";
-    const selectedIndex = Math.floor(Math.random() * state.items.length);
-    const slice = TAU / state.items.length;
-    const desiredRotation = -(selectedIndex + 0.5) * slice;
+    const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+    let randomWeight = Math.random() * totalWeight;
+    const selectedIndex = items.findIndex((item) => {
+      randomWeight -= item.weight;
+      return randomWeight < 0;
+    });
+    let selectedStart = 0;
+    for (let index = 0; index < selectedIndex; index += 1) selectedStart += TAU * items[index].weight / totalWeight;
+    const selectedSlice = TAU * items[selectedIndex].weight / totalWeight;
+    const desiredRotation = -(selectedStart + selectedSlice / 2);
     const delta = ((desiredRotation - state.currentRotation) % TAU + TAU) % TAU;
     const target = state.currentRotation + TAU * 5 + delta;
     const start = performance.now();
@@ -239,15 +289,15 @@
         requestAnimationFrame(frame);
       } else {
         state.currentRotation = target % TAU;
-        finishSpin(selectedIndex);
+        finishSpin(items[selectedIndex]);
       }
     }
     requestAnimationFrame(frame);
   }
 
-  function finishSpin(index) {
+  function finishSpin(item) {
     state.isSpinning = false;
-    state.lastResult = state.items[index];
+    state.lastResult = item.label;
     elements.spinLabel.textContent = "룰렛 돌리기";
     elements.spinStatus.textContent = `결과는 ${state.lastResult}입니다.`;
     elements.resultTitle.textContent = state.lastResult;
@@ -306,7 +356,7 @@
 
   function loadPreset(preset) {
     if (state.items.length > 0 && !window.confirm("현재 목록을 이 프리셋으로 바꿀까요?")) return;
-    elements.input.value = preset.items.join("\n");
+    state.items = sanitizeStoredOptions(preset.items);
     syncOptions();
     elements.presetDialog.close();
     showToast(`"${preset.name}" 프리셋을 불러왔어요.`);
@@ -363,12 +413,17 @@
 
   function init() {
     state.items = sanitizeStoredOptions(safeRead(STORAGE_KEYS.options, []));
-    elements.input.value = state.items.join("\n");
     state.presets = getPresets();
     safeWrite(STORAGE_KEYS.presets, state.presets);
-    elements.input.addEventListener("input", syncOptions);
+    elements.addOption.addEventListener("click", () => {
+      if (state.items.length >= MAX_ITEMS) return;
+      state.items.push(createOption("", 1, COLORS[state.items.length % COLORS.length]));
+      syncOptions();
+      const lastInput = elements.optionsList.lastElementChild?.querySelector("input[type='text']");
+      if (lastInput) lastInput.focus();
+    });
     elements.clear.addEventListener("click", () => {
-      elements.input.value = "";
+      state.items = [];
       state.lastResult = null;
       syncOptions();
       elements.resultTitle.textContent = "아직 결과가 없어요";
@@ -378,7 +433,7 @@
     });
     elements.spin.addEventListener("click", spin);
     elements.spinAgain.addEventListener("click", spin);
-    elements.editOptions.addEventListener("click", () => elements.input.focus());
+    elements.editOptions.addEventListener("click", () => elements.optionsList.querySelector("input")?.focus());
     elements.savePreset.addEventListener("click", openSaveDialog);
     elements.saveForm.addEventListener("submit", savePreset);
     elements.openPresets.addEventListener("click", () => {
