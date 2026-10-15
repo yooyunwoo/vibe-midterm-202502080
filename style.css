@@ -53,15 +53,13 @@ button:disabled { cursor: not-allowed; }
   padding: 28px 0 24px;
 }
 
-.site-header, .brand, .input-footer, .result-card, .dialog-heading, .dialog-actions {
+.input-footer, .result-card, .dialog-heading, .dialog-actions {
   display: flex;
   align-items: center;
 }
 
-.site-header { justify-content: space-between; margin-bottom: 42px; }
 .site-footer { display: flex; justify-content: center; gap: 10px; margin-top: 30px; color: var(--muted-ink); font-size: 12px; text-align: center; }
-.brand { gap: 13px; }
-.brand-mark, .result-icon {
+.result-icon {
   display: grid;
   place-items: center;
   width: 48px;
@@ -79,7 +77,6 @@ button:disabled { cursor: not-allowed; }
   font-weight: 700;
   letter-spacing: .22em;
 }
-.brand h1 { margin: 0; font-size: 21px; letter-spacing: -.04em; }
 .clay-card {
   border: 0;
   border-radius: var(--radius-lg);
@@ -106,7 +103,7 @@ button:disabled { cursor: not-allowed; }
 }
 .icon-button { display: flex; gap: 8px; align-items: center; font-size: 13px; }
 .main-content { max-width: 1060px; margin: 0 auto; }
-.intro { margin-bottom: 22px; }
+.intro { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 22px; }
 .intro h2 { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.08; letter-spacing: -.07em; }
 .workspace { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(360px, 1.22fr); gap: 26px; align-items: stretch; }
 .input-panel { padding: 30px; background: var(--surface); }
@@ -206,12 +203,7 @@ textarea:focus, input:focus { border-color: var(--pastel-aqua); background: rgba
     width: min(calc(100% - 28px), 560px);
     padding: 18px 0 max(24px, env(safe-area-inset-bottom));
   }
-  .site-header { margin-bottom: 32px; }
-  .brand { gap: 9px; }
-  .brand-mark { width: 40px; height: 40px; font-size: 18px; }
-  .brand h1 { font-size: 18px; }
   .icon-button { min-height: 44px; padding: 0 12px; }
-  .intro { display: block; }
   .intro h2 { font-size: clamp(30px, 9vw, 38px); }
   .workspace { grid-template-columns: 1fr; }
   .input-panel, .roulette-panel { padding: 22px; }
@@ -236,7 +228,6 @@ textarea:focus, input:focus { border-color: var(--pastel-aqua); background: rgba
 
 @media (max-width: 480px) {
   .app-shell { width: calc(100% - 20px); }
-  .site-header { margin-bottom: 26px; }
   .intro { margin-bottom: 16px; }
   .input-panel, .roulette-panel { padding: 18px; border-radius: 22px; }
   .input-footer { align-items: flex-start; gap: 8px; }
@@ -260,8 +251,6 @@ textarea:focus, input:focus { border-color: var(--pastel-aqua); background: rgba
 @media (max-width: 360px) {
   .app-shell { width: calc(100% - 16px); }
   .input-panel, .roulette-panel { padding: 15px; }
-  .brand-mark { width: 36px; height: 36px; }
-  .brand h1 { font-size: 17px; }
   .icon-button { padding: 0 10px; font-size: 12px; }
   .status-pill { padding-inline: 8px; }
   .result-copy p:last-child { font-size: 11px; }
