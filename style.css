@@ -32,7 +32,7 @@
 
 * { box-sizing: border-box; }
 
-html { min-width: 320px; scroll-behavior: smooth; }
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
@@ -187,15 +187,65 @@ textarea:focus, input:focus { border-color: var(--pastel-aqua); background: rgba
 [hidden] { display: none !important; }
 
 @media (max-width: 760px) {
-  .app-shell { width: min(100% - 28px, 560px); padding-top: 18px; }
-  .site-header { margin-bottom: 40px; }
-  .icon-button { padding: 0 12px; }
+  .app-shell {
+    width: min(calc(100% - 28px), 560px);
+    padding: 18px 0 max(24px, env(safe-area-inset-bottom));
+  }
+  .site-header { margin-bottom: 32px; }
+  .brand { gap: 9px; }
+  .brand-mark { width: 40px; height: 40px; font-size: 18px; }
+  .brand h1 { font-size: 18px; }
+  .icon-button { min-height: 44px; padding: 0 12px; }
   .intro { display: block; }
-  .intro h2 { font-size: 38px; }
+  .intro h2 { font-size: clamp(30px, 9vw, 38px); }
   .workspace { grid-template-columns: 1fr; }
-  .input-panel, .roulette-panel { padding: 24px; }
-  .result-card { align-items: flex-start; flex-wrap: wrap; padding: 20px; }
-  .result-actions { width: 100%; justify-content: flex-end; }
+  .input-panel, .roulette-panel { padding: 22px; }
+  .panel-heading { margin-bottom: 16px; }
+  .panel-heading h3 { font-size: 19px; }
+  textarea { min-height: 160px; max-height: 38vh; padding: 14px; }
+  .wheel-stage { width: min(100%, 420px); }
+  .roulette-panel .primary-button { width: 100%; margin-top: 10px; }
+  .result-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 18px;
+  }
+  .result-copy { flex-basis: calc(100% - 54px); }
+  .result-copy h3 { font-size: 18px; }
+  .result-actions { width: 100%; justify-content: stretch; gap: 8px; }
+  .result-actions .text-button, .result-actions .secondary-button { flex: 1; min-height: 44px; }
+  .preset-dialog { max-height: calc(100dvh - 24px); padding: 22px; }
+}
+
+@media (max-width: 480px) {
+  .app-shell { width: calc(100% - 20px); }
+  .site-header { margin-bottom: 26px; }
+  .intro { margin-bottom: 16px; }
+  .input-panel, .roulette-panel { padding: 18px; border-radius: 22px; }
+  .input-footer { align-items: flex-start; gap: 8px; }
+  .hint { max-width: 65%; }
+  .wheel-stage { width: 100%; }
+  .pointer {
+    border-right-width: 12px;
+    border-left-width: 12px;
+    border-top-width: 24px;
+  }
+  .primary-button { min-height: 52px; }
+  .preset-item { align-items: flex-start; flex-direction: column; }
+  .preset-actions { width: 100%; }
+  .preset-actions button { flex: 1; min-height: 40px; }
+}
+
+@media (max-width: 360px) {
+  .app-shell { width: calc(100% - 16px); }
+  .input-panel, .roulette-panel { padding: 15px; }
+  .brand-mark { width: 36px; height: 36px; }
+  .brand h1 { font-size: 17px; }
+  .icon-button { padding: 0 10px; font-size: 12px; }
+  .status-pill { padding-inline: 8px; }
+  .result-copy p:last-child { font-size: 11px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
