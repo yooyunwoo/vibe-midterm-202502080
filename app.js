@@ -202,7 +202,7 @@
     if (textAngle > Math.PI / 2 && textAngle < Math.PI * 1.5) textAngle += Math.PI;
     context.rotate(textAngle);
     context.fillStyle = "#655c5a";
-    context.font = `700 ${Math.max(10, Math.min(16, size / (state.items.length > 10 ? 31 : 25)))}px Trebuchet MS, sans-serif`;
+    context.font = `700 ${Math.max(10, Math.min(16, size / (state.items.length > 10 ? 31 : 25)))}px GeuriunYeeun, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(label, 0, 0);

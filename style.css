@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "GeuriunYeeun";
+  src: url("https://cdn.jsdelivr.net/gh/Project-Noonnu/2609271945@griun-yeeun-rg/griun-yeeun-rg/Griun_Yeeun-Rg.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --cream: #fff0d6;
   --blush-pink: #ffd6e0;
@@ -28,7 +35,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--cream);
-  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: "GeuriunYeeun", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   line-height: 1.5;
 }
 
