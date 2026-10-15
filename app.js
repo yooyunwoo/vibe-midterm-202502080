@@ -82,6 +82,11 @@
     return [...new Set(candidates)];
   }
 
+  function sanitizeStoredOptions(value) {
+    if (!Array.isArray(value)) return [];
+    return normalizeOptions(value.filter((item) => typeof item === "string").join("\n")).slice(0, MAX_ITEMS);
+  }
+
   function readOptions() {
     const normalized = normalizeOptions(elements.input.value);
     const hasTooMany = normalized.length > MAX_ITEMS;
@@ -260,8 +265,12 @@
     if (!Array.isArray(stored)) return [];
     return stored.filter((preset) => (
       preset && typeof preset.id === "string" && typeof preset.name === "string" &&
-      Array.isArray(preset.items) && preset.items.length > 0
-    ));
+      Array.isArray(preset.items) && sanitizeStoredOptions(preset.items).length > 0
+    )).slice(0, MAX_PRESETS).map((preset) => ({
+      ...preset,
+      name: preset.name.trim(),
+      items: sanitizeStoredOptions(preset.items),
+    })).filter((preset) => preset.name);
   }
 
   function renderPresets() {
@@ -353,10 +362,10 @@
   }
 
   function init() {
-    state.items = safeRead(STORAGE_KEYS.options, []);
-    if (!Array.isArray(state.items)) state.items = [];
+    state.items = sanitizeStoredOptions(safeRead(STORAGE_KEYS.options, []));
     elements.input.value = state.items.join("\n");
     state.presets = getPresets();
+    safeWrite(STORAGE_KEYS.presets, state.presets);
     elements.input.addEventListener("input", syncOptions);
     elements.clear.addEventListener("click", () => {
       elements.input.value = "";
