@@ -97,11 +97,11 @@
   }
 
   function renderOptions() {
-    const count = state.items.length;
+    const rowCount = state.items.length;
     const usableItems = state.items.filter((item) => item.label.trim());
     const usableCount = usableItems.length;
-    elements.count.textContent = `${count} / ${MAX_ITEMS}`;
-    elements.count.setAttribute("aria-label", `선택지 ${count}개`);
+    elements.count.textContent = `${usableCount} / ${MAX_ITEMS}`;
+    elements.count.setAttribute("aria-label", `입력된 선택지 ${usableCount}개`);
     elements.optionsList.replaceChildren();
     const totalWeight = state.items.reduce((sum, item) => sum + item.weight, 0);
     state.items.forEach((item, index) => {
@@ -136,19 +136,19 @@
       const remove = document.createElement("button");
       remove.type = "button"; remove.className = "delete-option"; remove.textContent = "×";
       remove.setAttribute("aria-label", `${index + 1}번 선택지 삭제`);
-      remove.disabled = count <= 1 || state.isSpinning;
+      remove.disabled = rowCount <= 2 || state.isSpinning;
       remove.addEventListener("click", () => removeOption(item.id));
       row.append(number, label, weightControl, colorLabel, remove);
       elements.optionsList.append(row);
     });
     elements.spin.disabled = usableCount < 2 || state.isSpinning;
     elements.savePreset.disabled = usableCount < 1 || state.isSpinning;
-    elements.clear.disabled = count === 0 || state.isSpinning;
-    elements.addOption.disabled = count >= MAX_ITEMS || state.isSpinning;
+    elements.clear.disabled = usableCount === 0 && rowCount === 0 || state.isSpinning;
+    elements.addOption.disabled = rowCount >= MAX_ITEMS || state.isSpinning;
     elements.emptyWheel.hidden = usableCount > 0;
     if (!state.isSpinning) {
       if (usableCount < 2) {
-        elements.hint.textContent = usableCount === 0 ? "최소 2개의 선택지를 입력해 주세요." : "한 가지 선택지가 더 필요해요.";
+        elements.hint.textContent = usableCount === 0 ? "두 칸에 선택지를 입력해 주세요." : "한 가지 선택지가 더 필요해요.";
       } else if (!elements.hint.classList.contains("error")) {
         elements.hint.textContent = "룰렛을 돌릴 수 있어요.";
       }
@@ -169,6 +169,17 @@
     const row = elements.optionsList.querySelector(`[data-id="${id}"]`);
     const percent = row?.querySelector(".weight-control span");
     if (percent) percent.textContent = `${Math.round(item.weight / totalWeight * 100)}%`;
+    const usableCount = state.items.filter((entry) => entry.label.trim()).length;
+    elements.count.textContent = `${usableCount} / ${MAX_ITEMS}`;
+    elements.count.setAttribute("aria-label", `입력된 선택지 ${usableCount}개`);
+    elements.spin.disabled = usableCount < 2 || state.isSpinning;
+    elements.savePreset.disabled = usableCount < 1 || state.isSpinning;
+    elements.emptyWheel.hidden = usableCount > 0;
+    if (!state.isSpinning) {
+      elements.hint.textContent = usableCount < 2
+        ? (usableCount === 0 ? "두 칸에 선택지를 입력해 주세요." : "한 가지 선택지가 더 필요해요.")
+        : "룰렛을 돌릴 수 있어요.";
+    }
   }
 
   function removeOption(id) {
@@ -413,6 +424,12 @@
 
   function init() {
     state.items = sanitizeStoredOptions(safeRead(STORAGE_KEYS.options, []));
+    if (state.items.length === 0) {
+      state.items = [
+        createOption("", 1, COLORS[0]),
+        createOption("", 1, COLORS[1]),
+      ];
+    }
     state.presets = getPresets();
     safeWrite(STORAGE_KEYS.presets, state.presets);
     elements.addOption.addEventListener("click", () => {
