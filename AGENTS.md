@@ -11,8 +11,8 @@
 - 데이터 저장은 브라우저 `localStorage`를 사용한다.
 - React, Vue, Svelte, TypeScript, CSS 프레임워크, npm 패키지, 번들러, 외부 CDN을 추가하지 않는다.
 - 정적 파일로 실행 가능해야 한다. 기본 파일은 `index.html`, `style.css`, `app.js`로 구성한다.
-- 외부 이미지와 API에는 의존하지 않는다. 단, 제품 지정 폰트인 `GeuriunYeeun`은 아래 CDN 웹폰트를 예외적으로 사용한다.
-- `GeuriunYeeun` 웹폰트 선언은 `style.css`의 `@font-face`에 유지하고, 폴백으로 시스템 한글 폰트를 둔다.
+- 외부 이미지와 API에는 의존하지 않는다. 단, 제품 지정 폰트인 `OkDandan`은 아래 CDN 웹폰트를 예외적으로 사용한다.
+- `OkDandan` 웹폰트 선언은 `style.css`의 `@font-face`에 유지하고, 폴백으로 시스템 한글 폰트를 둔다.
 
 ## 디자인 지침
 
