@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="점심 메뉴와 다양한 의사결정을 도와주는 파스텔 룰렛" />
+    <title>오늘 뭐하지? | 랜덤 룰렛</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="site-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <div>
+            <p class="eyebrow">SOFT DECISION MAKER</p>
+            <h1>오늘 뭐하지?</h1>
+          </div>
+        </div>
+        <button class="icon-button clay-button" id="open-presets" type="button" aria-haspopup="dialog">
+          <span aria-hidden="true">♡</span>
+          <span>내 프리셋</span>
+        </button>
+      </header>
+
+      <main class="main-content">
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">YOUR LITTLE RANDOM HELPER</p>
+            <h2 id="page-title">오늘의 선택을<br /><span>룰렛에게 맡겨보세요.</span></h2>
+          </div>
+          <p class="intro-copy">메뉴, 벌칙, 순서까지<br />귀엽고 공정하게 골라드릴게요.</p>
+        </section>
+
+        <div class="workspace">
+          <section class="input-panel clay-card" aria-labelledby="input-title">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">01 · OPTIONS</p>
+                <h3 id="input-title">선택지를 적어주세요</h3>
+              </div>
+              <span class="status-pill" id="item-count">0 / 50</span>
+            </div>
+            <label class="sr-only" for="options-input">룰렛 선택지</label>
+            <textarea
+              id="options-input"
+              rows="8"
+              maxlength="2000"
+              placeholder="한 줄에 하나씩 입력해 주세요&#10;&#10;김치찌개&#10;돈까스&#10;초밥"
+              spellcheck="false"
+            ></textarea>
+            <div class="input-footer">
+              <p class="hint" id="input-hint">최소 2개부터 시작할 수 있어요.</p>
+              <button class="text-button" id="clear-options" type="button">전체 지우기</button>
+            </div>
+            <div class="preview-list" id="options-preview" aria-label="현재 선택지 목록"></div>
+            <button class="secondary-button clay-button" id="save-preset" type="button">
+              <span aria-hidden="true">＋</span> 이 목록 저장하기
+            </button>
+          </section>
+
+          <section class="roulette-panel clay-card" aria-labelledby="roulette-title">
+            <div class="panel-heading roulette-heading">
+              <div>
+                <p class="section-kicker">02 · SPIN THE WHEEL</p>
+                <h3 id="roulette-title">행운의 원판</h3>
+              </div>
+              <span class="sparkle" aria-hidden="true">✦</span>
+            </div>
+            <div class="wheel-stage">
+              <div class="pointer" aria-hidden="true"></div>
+              <canvas id="roulette-canvas" width="600" height="600" aria-label="선택지 룰렛 원판"></canvas>
+              <div class="wheel-empty" id="wheel-empty">
+                <span aria-hidden="true">✦</span>
+                <p>선택지를 입력하면<br />룰렛이 나타나요</p>
+              </div>
+            </div>
+            <button class="primary-button clay-button" id="spin-button" type="button" disabled>
+              <span id="spin-label">룰렛 돌리기</span>
+              <span class="button-icon" aria-hidden="true">↗</span>
+            </button>
+            <p class="sr-only" id="spin-status" aria-live="polite">룰렛을 돌릴 준비가 되지 않았습니다.</p>
+          </section>
+        </div>
+
+        <section class="result-card clay-card" id="result-card" aria-labelledby="result-title">
+          <div class="result-icon" aria-hidden="true">✦</div>
+          <div class="result-copy">
+            <p class="section-kicker">YOUR RESULT</p>
+            <h3 id="result-title">아직 결과가 없어요</h3>
+            <p id="result-message">룰렛을 돌리면 오늘의 선택이 여기에 나타나요.</p>
+          </div>
+          <div class="result-actions">
+            <button class="text-button" id="edit-options" type="button" hidden>목록 수정</button>
+            <button class="secondary-button clay-button" id="spin-again" type="button" hidden>다시 돌리기 ↗</button>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>SOFT COLORS, STRONG FEELINGS.</span>
+        <span aria-hidden="true">♡</span>
+        <span>모든 선택지는 같은 확률로 선택돼요.</span>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="preset-dialog clay-card" id="preset-dialog" aria-labelledby="preset-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="section-kicker">YOUR COLLECTION</p>
+          <h2 id="preset-title">내 프리셋</h2>
+        </div>
+        <button class="close-button" id="close-presets" type="button" aria-label="프리셋 닫기">×</button>
+      </div>
+      <p class="dialog-description">자주 쓰는 선택지 목록을 저장하고 다시 불러오세요.</p>
+      <div class="preset-list" id="preset-list"></div>
+      <p class="empty-presets" id="empty-presets">아직 저장한 프리셋이 없어요.</p>
+    </dialog>
+
+    <dialog class="preset-dialog clay-card" id="save-dialog" aria-labelledby="save-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="section-kicker">SAVE A LIST</p>
+          <h2 id="save-title">프리셋 저장</h2>
+        </div>
+        <button class="close-button" id="close-save" type="button" aria-label="저장 창 닫기">×</button>
+      </div>
+      <form id="save-form">
+        <label for="preset-name">프리셋 이름</label>
+        <input id="preset-name" maxlength="30" placeholder="예: 우리 팀 점심 메뉴" required />
+        <p class="form-error" id="save-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="text-button" id="cancel-save" type="button">취소</button>
+          <button class="primary-button clay-button" type="submit">저장하기</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
