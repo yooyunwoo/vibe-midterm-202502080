@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'JoseonGulim';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/ChosunGu.woff') format('woff');
+  font-weight: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #F5EFE6;
   --surface: #FFFBF5;
@@ -32,7 +39,7 @@
   --space-3: 24px;
   --space-4: 32px;
 
-  --font: Pretendard, 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+  --font: 'JoseonGulim', 'Malgun Gothic', system-ui, sans-serif;
   --max-width: 1100px;
 }
 
