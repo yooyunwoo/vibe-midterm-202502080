@@ -51,7 +51,8 @@
 .order-card { display: flex; flex-direction: column; gap: var(--space-1); }
 .order-id { font-size: 18px; }
 .order-note { padding: var(--space-1) var(--space-2); border-radius: var(--radius-btn); background: var(--bg); font-size: 14px; }
-.order-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-1); margin-top: var(--space-1); }
+.order-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+.order-actions .btn { flex: 1; }
 
 /* ---------- 사이드 패널 ---------- */
 

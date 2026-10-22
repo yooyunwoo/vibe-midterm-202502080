@@ -80,6 +80,7 @@
     if (CANCELABLE.indexOf(order.status) !== -1) {
       actions.append(el('button', { class: 'btn btn-danger', type: 'button', text: '취소', data: { action: 'cancel', id: String(order.id) } }));
     }
+    actions.append(el('button', { class: 'btn btn-secondary', type: 'button', text: '삭제', 'aria-label': '주문 #' + order.id + ' 삭제', data: { action: 'delete', id: String(order.id) } }));
 
     const lines = el('ul', { class: 'order-lines' });
     order.items.forEach(function (item) {
@@ -96,11 +97,12 @@
       lines,
       order.note ? el('p', { class: 'order-note', text: '요청: ' + order.note }) : null,
       el('div', { class: 'dialog-row' }, [el('span', { text: '합계' }), el('strong', { text: formatPrice(order.totalPrice) })]),
-      actions.children.length ? actions : null
+      actions
     ]);
   }
 
   function renderOrders(orders) {
+    refs.clearOrders.disabled = orders.length === 0;
     refs.orders.replaceChildren();
     const visible = orders.filter(function (o) {
       return (state.filter === 'all' || o.status === state.filter) && matchesQuery(o);
@@ -212,6 +214,15 @@
     renderMenuStock();
   }
 
+  // 삭제는 기록만 지운다. 재고는 건드리지 않는다(재고 복구는 주문 취소로 처리).
+  // 주문번호는 cafe_order_seq가 이어가므로 삭제한 번호는 다시 쓰이지 않는다.
+  function deleteOrders(ids) {
+    const remove = ids === null ? null : new Set(ids);
+    const orders = remove === null ? [] : storage.getOrders().filter(function (o) { return !remove.has(o.id); });
+    if (!storage.saveOrders(orders)) toast('주문을 삭제하지 못했어요.');
+    renderDashboard();
+  }
+
   function toggleSoldOut(menuId) {
     const menu = storage.getMenu();
     const item = menu.find(function (m) { return m.id === menuId; });
@@ -243,6 +254,11 @@
         if (order && NEXT_STATUS[order.status]) updateStatus(id, NEXT_STATUS[order.status]);
       }
       if (button.dataset.action === 'cancel' && window.confirm('주문 #' + id + '을(를) 취소할까요?')) updateStatus(id, 'canceled');
+      if (button.dataset.action === 'delete' && window.confirm('주문 #' + id + '을(를) 삭제할까요? 삭제한 주문은 되돌릴 수 없고 재고도 복구되지 않아요.')) deleteOrders([id]);
+    });
+    refs.clearOrders.addEventListener('click', function () {
+      const count = storage.getOrders().length;
+      if (count > 0 && window.confirm('주문 ' + count + '건을 모두 삭제할까요? 삭제한 주문은 되돌릴 수 없고 재고도 복구되지 않아요.')) deleteOrders(null);
     });
     refs.menu.addEventListener('click', function (event) {
       const button = event.target.closest('[data-action="stock"]');
@@ -259,7 +275,7 @@
 
   function init() {
     ['view-admin:view', 'admin-summary:summary', 'admin-filters:filters', 'admin-search:search', 'admin-orders:orders',
-      'admin-popular:popular', 'admin-menu:menu'
+      'admin-popular:popular', 'admin-menu:menu', 'admin-clear-orders:clearOrders'
     ].forEach(function (pair) {
       const parts = pair.split(':');
       refs[parts[1]] = byId(parts[0]);
