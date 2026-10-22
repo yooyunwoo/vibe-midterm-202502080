@@ -3,7 +3,7 @@
 
   const Cafe = (window.Cafe = window.Cafe || {});
 
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 4;
   const KEYS = {
     menu: 'cafe_menu',
     cart: 'cafe_cart',
@@ -88,11 +88,29 @@
     }));
   }
 
+  // v4: 크루아상이 두바이 쫀득 쿠키로 바뀌었다. 저장된 메뉴의 이름·설명·이미지를 시드 기준으로 맞추고
+  // (재고·품절은 유지) 장바구니에 담긴 이름도 갱신한다. 지난 주문 기록은 그대로 둔다.
+  function migrateV3toV4() {
+    const seedById = {};
+    Cafe.MENU_SEED.forEach(function (item) { seedById[item.id] = item; });
+    const renamed = {};
+    saveMenu(getMenu().map(function (item) {
+      const seed = seedById[item.id];
+      if (!seed) return item;
+      renamed[item.id] = seed.name;
+      return Object.assign({}, item, { name: seed.name, description: seed.description, image: seed.image });
+    }));
+    saveCart(getCart().map(function (item) {
+      return renamed[item.menuId] ? Object.assign({}, item, { name: renamed[item.menuId] }) : item;
+    }));
+  }
+
   function init() {
     const version = read(localStorage, KEYS.schemaVersion, null);
     if (version !== SCHEMA_VERSION) {
       if (version === 1) migrateV1toV2();
       if (version === 1 || version === 2) migrateV2toV3();
+      if (version !== null && version <= 3) migrateV3toV4();
       write(localStorage, KEYS.schemaVersion, SCHEMA_VERSION);
     }
     if (getMenu().length === 0) {
