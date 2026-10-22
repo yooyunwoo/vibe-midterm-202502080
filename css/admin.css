@@ -1,0 +1,93 @@
+.admin-login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 400px;
+  margin: var(--space-4) auto;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+/* ---------- 요약 지표 ---------- */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.summary-card { display: flex; flex-direction: column; gap: var(--space-0); }
+.summary-wide { grid-column: 1 / -1; }
+.summary-value { font-size: 24px; }
+
+@media (min-width: 768px) {
+  .summary-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .summary-wide { grid-column: auto; }
+}
+
+/* ---------- 주문 목록 ---------- */
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@media (min-width: 1024px) {
+  .admin-layout { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+}
+
+.admin-orders { display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-orders .category-bar { margin-bottom: 0; }
+
+.order-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .order-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.order-card { display: flex; flex-direction: column; gap: var(--space-1); }
+.order-id { font-size: 18px; }
+.order-note { padding: var(--space-1) var(--space-2); border-radius: var(--radius-btn); background: var(--bg); font-size: 14px; }
+.order-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--space-1); margin-top: var(--space-1); }
+
+/* ---------- 사이드 패널 ---------- */
+
+.admin-side { display: flex; flex-direction: column; gap: var(--space-2); }
+.admin-side .card { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.rank-list,
+.stock-list { display: flex; flex-direction: column; gap: var(--space-1); list-style: none; }
+
+.rank-list li,
+.stock-list li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
+
+.rank-list { counter-reset: rank; }
+.rank-list li::before {
+  counter-increment: rank;
+  content: counter(rank);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-right: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--surface-alt);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rank-list li span { flex: 1; }
+.is-soldout-name { color: var(--text-muted); text-decoration: line-through; }

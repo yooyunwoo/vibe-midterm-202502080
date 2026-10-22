@@ -52,8 +52,8 @@ body {
 
 body.no-scroll { overflow: hidden; }
 
-h1, h2, h3, p, ul { margin: 0; padding: 0; }
-ul { list-style: none; }
+h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
 button, input, textarea { font: inherit; color: inherit; }
 
 :focus-visible {
