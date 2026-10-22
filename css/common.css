@@ -270,3 +270,20 @@ dialog::backdrop { background: var(--overlay); }
   color: var(--surface);
   text-align: center;
 }
+
+/* ---------- 깜빡임 강조 배지 (품절 / 품절 임박 / 인기) ---------- */
+
+.badge-low { background: var(--danger); color: var(--on-primary); }
+.badge-popular { background: var(--st-received-bg); color: var(--st-received-fg); }
+
+.badge-blink { animation: badge-blink 1.2s ease-in-out infinite; }
+
+@keyframes badge-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+/* 움직임을 줄이도록 설정한 사용자에게는 깜빡임 없이 고정 표시한다. */
+@media (prefers-reduced-motion: reduce) {
+  .badge-blink { animation: none; }
+}

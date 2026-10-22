@@ -113,19 +113,14 @@
   }
 
   function renderPopular(orders) {
-    const totals = {};
-    orders.forEach(function (order) {
-      if (order.status === 'canceled') return;
-      order.items.forEach(function (item) { totals[item.name] = (totals[item.name] || 0) + item.quantity; });
-    });
-    const ranked = Object.keys(totals).sort(function (a, b) { return totals[b] - totals[a]; }).slice(0, 5);
+    const ranked = Cafe.ui.popularRanking(orders).slice(0, Cafe.POPULAR_COUNT);
     refs.popular.replaceChildren();
     if (ranked.length === 0) {
       refs.popular.append(el('li', { class: 'muted', text: '집계할 주문이 없어요.' }));
       return;
     }
-    ranked.forEach(function (name) {
-      refs.popular.append(el('li', {}, [el('span', { text: name }), el('strong', { text: totals[name] + '개' })]));
+    ranked.forEach(function (entry) {
+      refs.popular.append(el('li', {}, [el('span', { text: entry.name }), el('strong', { text: entry.quantity + '개' })]));
     });
   }
 

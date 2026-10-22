@@ -40,6 +40,20 @@
     return [o.temp, o.size].filter(Boolean).concat(labels).join(' · ');
   }
 
+  // 취소되지 않은 주문의 메뉴별 판매 수량을 많은 순으로 반환한다.
+  function popularRanking(orders) {
+    const totals = {};
+    orders.forEach(function (order) {
+      if (order.status === 'canceled') return;
+      order.items.forEach(function (item) {
+        const entry = totals[item.menuId] || (totals[item.menuId] = { menuId: item.menuId, name: item.name, quantity: 0 });
+        entry.quantity += item.quantity;
+      });
+    });
+    return Object.keys(totals).map(function (id) { return totals[id]; })
+      .sort(function (a, b) { return b.quantity - a.quantity; });
+  }
+
   // 색만으로 구분하지 않도록 텍스트 라벨을 함께 표시한다.
   function statusBadge(status) {
     return el('span', { class: 'badge badge-' + status, text: Cafe.STATUS[status] || status });
@@ -54,5 +68,5 @@
     toastTimer = setTimeout(function () { node.hidden = true; }, 2600);
   }
 
-  Cafe.ui = { el: el, formatPrice: formatPrice, formatTime: formatTime, describeOptions: describeOptions, statusBadge: statusBadge, toast: toast };
+  Cafe.ui = { el: el, formatPrice: formatPrice, formatTime: formatTime, describeOptions: describeOptions, popularRanking: popularRanking, statusBadge: statusBadge, toast: toast };
 })();

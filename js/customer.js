@@ -64,6 +64,15 @@
     });
   }
 
+  // 메뉴 이름 옆에 깜빡이는 강조 배지: 품절 / 품절 임박 / 인기
+  function menuBadges(menu, popularIds) {
+    const badges = [];
+    if (menu.soldOut) badges.push(el('span', { class: 'badge badge-soldout badge-blink', text: '품절' }));
+    else if (menu.stock <= Cafe.ALMOST_SOLDOUT_STOCK) badges.push(el('span', { class: 'badge badge-low badge-blink', text: '품절 임박' }));
+    if (!menu.soldOut && popularIds.indexOf(menu.id) !== -1) badges.push(el('span', { class: 'badge badge-popular badge-blink', text: '🔥 인기' }));
+    return badges;
+  }
+
   function renderMenu() {
     refs.grid.replaceChildren();
     const items = state.menu.filter(function (m) { return state.category === 'all' || m.category === state.category; });
@@ -71,16 +80,18 @@
       refs.grid.append(el('p', { class: 'empty', text: '표시할 메뉴가 없어요.' }));
       return;
     }
+    const popularIds = Cafe.ui.popularRanking(storage.getOrders()).slice(0, Cafe.POPULAR_COUNT)
+      .map(function (entry) { return entry.menuId; });
     items.forEach(function (menu) {
       refs.grid.append(el('article', { class: 'card menu-card' + (menu.soldOut ? ' is-soldout' : '') }, [
         el('div', { class: 'menu-emoji', 'aria-hidden': 'true', text: menu.image || '☕' }),
-        el('h3', { class: 'menu-name', text: menu.name }),
+        el('div', { class: 'menu-title' }, [el('h3', { class: 'menu-name', text: menu.name })].concat(menuBadges(menu, popularIds))),
         el('p', { class: 'menu-desc', text: menu.description || '' }),
         !menu.soldOut && menu.stock <= LOW_STOCK ? el('p', { class: 'stock-note', text: menu.stock + '개 남음' }) : null,
         el('div', { class: 'menu-foot' }, [
           el('strong', { class: 'menu-price', text: formatPrice(menu.price) }),
           menu.soldOut
-            ? el('span', { class: 'badge badge-soldout', text: '품절' })
+            ? el('button', { class: 'btn btn-small', type: 'button', text: '품절', disabled: true, 'aria-label': menu.name + ' 품절' })
             : el('button', { class: 'btn btn-small', type: 'button', text: '담기', 'aria-label': menu.name + ' 담기', data: { menuId: menu.id } })
         ])
       ]));

@@ -89,7 +89,7 @@ PRD.md 5.4의 디자인 가이드를 따른다.
 - 팔레트는 `--bg`, `--surface`, `--surface-alt`, `--border`, `--primary`, `--primary-hover`, `--text`, `--text-muted`, `--danger`, `--success` 변수를 사용한다.
 - 버튼은 기본/보조/위험 3종만 쓰고 최소 높이 44px. 간격은 8px 배수.
 - 상태는 색과 텍스트 라벨을 함께 표시한다.
-- 호버·눌림은 배경색 변화로만, `transition`은 0.15s 이내.
+- 호버·눌림은 배경색 변화로만, `transition`은 0.15s 이내. 예외: 품절/품절 임박/인기 배지(`.badge-blink`)만 투명도 깜빡임 애니메이션을 쓰며, `prefers-reduced-motion: reduce`에서는 반드시 끈다.
 - 키보드 포커스 링(2px 브라운 아웃라인)을 제거하지 않는다. 본문 대비 4.5:1 이상 유지.
 
 ## 7. 작업 방식

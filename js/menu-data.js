@@ -16,6 +16,10 @@
     { id: 'syrup', label: '시럽 추가', extra: 0 }
   ];
 
+  // 인기 메뉴로 표시할 상위 개수, 품절 임박으로 보는 남은 재고
+  Cafe.POPULAR_COUNT = 3;
+  Cafe.ALMOST_SOLDOUT_STOCK = 1;
+
   Cafe.STATUS = {
     received: '접수',
     preparing: '준비중',

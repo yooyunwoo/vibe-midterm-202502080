@@ -203,3 +203,5 @@
 }
 
 .stock-note { color: var(--danger); font-size: 13px; font-weight: 700; }
+
+.menu-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-0) var(--space-1); }
