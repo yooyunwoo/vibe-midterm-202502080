@@ -156,7 +156,7 @@
 | `--primary` | `#7A5C3E` | 기본 버튼, 활성 탭, 강조 (흰색 글자와 대비 확보) |
 | `--primary-hover` | `#664B31` | 기본 버튼 눌림/호버 |
 | `--text` | `#3E3226` | 본문 텍스트 |
-| `--text-muted` | `#7C6D5C` | 보조 텍스트 |
+| `--text-muted` | `#6A5D4E` | 보조 텍스트 (배경 대비 4.5:1 이상) |
 | `--danger` | `#B5483A` | 취소/삭제 |
 | `--success` | `#5E7F52` | 완료 상태 |
 
@@ -169,7 +169,7 @@
   --primary: #7A5C3E;
   --primary-hover: #664B31;
   --text: #3E3226;
-  --text-muted: #7C6D5C;
+  --text-muted: #6A5D4E;
   --danger: #B5483A;
   --success: #5E7F52;
   --radius-card: 16px;
@@ -283,7 +283,8 @@ Order = {
 │   └─ admin.css
 ├─ js/
 │   ├─ storage.js      # localStorage 래퍼 (메뉴/장바구니/주문)
-│   ├─ menu-data.js    # 초기 메뉴 데이터
+│   ├─ menu-data.js    # 카테고리·옵션·상태 라벨 상수, 초기 메뉴 데이터
+│   ├─ ui.js           # DOM 헬퍼, 포맷, 상태 배지, 토스트
 │   ├─ router.js       # 탭 전환, 해시 동기화, 관리자 인증 가드
 │   ├─ customer.js     # 메뉴 렌더링, 장바구니, 주문
 │   └─ admin.js        # 인증, 대시보드, 상태 변경

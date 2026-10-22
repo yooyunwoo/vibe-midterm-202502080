@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>카페 온기 - 주문</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="css/customer.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <h1 class="brand">☕ 카페 온기</h1>
+      <nav class="view-tabs" role="tablist" aria-label="화면 전환">
+        <button class="view-tab" role="tab" id="tab-customer" data-view="customer" aria-controls="view-customer" aria-selected="true">주문하기</button>
+        <button class="view-tab" role="tab" id="tab-admin" data-view="admin" aria-controls="view-admin" aria-selected="false" tabindex="-1">관리자</button>
+      </nav>
+      <button class="btn btn-secondary cart-button" id="cart-button" type="button" aria-label="장바구니 열기" aria-expanded="false" aria-controls="cart-panel">
+        <span aria-hidden="true">🛒</span>
+        <span class="cart-count" id="cart-count" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section id="view-customer" class="view" data-view-section="customer" role="tabpanel" aria-labelledby="tab-customer">
+      <div class="category-bar" id="category-tabs" role="group" aria-label="메뉴 카테고리"></div>
+      <div class="menu-grid" id="menu-grid"></div>
+
+      <section class="card lookup" aria-labelledby="lookup-title">
+        <h2 class="section-title" id="lookup-title">내 주문 조회</h2>
+        <form class="lookup-form" id="lookup-form">
+          <label class="visually-hidden" for="lookup-input">주문번호</label>
+          <input class="input" id="lookup-input" type="number" min="1" inputmode="numeric" placeholder="주문번호를 입력하세요" required>
+          <button class="btn" type="submit">조회</button>
+        </form>
+        <div id="lookup-result" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="backdrop" id="cart-backdrop" hidden></div>
+  <aside class="cart-panel" id="cart-panel" aria-labelledby="cart-title" hidden>
+    <div class="cart-head">
+      <h2 class="section-title" id="cart-title">장바구니</h2>
+      <button class="btn btn-secondary btn-small" id="cart-clear" type="button">비우기</button>
+      <button class="btn btn-secondary btn-round" id="cart-close" type="button" aria-label="장바구니 닫기">✕</button>
+    </div>
+    <ul class="cart-items" id="cart-items"></ul>
+    <form class="cart-foot" id="order-form" novalidate>
+      <div class="cart-total"><span>합계</span><strong id="cart-total">0원</strong></div>
+      <div class="field">
+        <label for="customer-name">주문자 이름 또는 테이블 번호</label>
+        <input class="input" id="customer-name" name="customerName" type="text" maxlength="20" autocomplete="off" aria-describedby="name-error">
+        <p class="field-error" id="name-error" hidden>주문자 이름 또는 테이블 번호를 입력해주세요.</p>
+      </div>
+      <div class="field">
+        <label for="order-note">요청사항 (선택)</label>
+        <textarea class="input" id="order-note" name="note" rows="2" maxlength="100"></textarea>
+      </div>
+      <button class="btn btn-block" type="submit" id="order-submit">주문하기</button>
+    </form>
+  </aside>
+
+  <dialog id="menu-dialog" aria-labelledby="menu-dialog-title"><div class="dialog-body" id="menu-dialog-body"></div></dialog>
+  <dialog id="complete-dialog" aria-labelledby="complete-title"><div class="dialog-body" id="complete-body"></div></dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/menu-data.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/router.js" defer></script>
+  <script src="js/customer.js" defer></script>
+</body>
+</html>

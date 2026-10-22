@@ -21,7 +21,8 @@
 │   └─ admin.css
 ├─ js/
 │   ├─ storage.js      # localStorage 접근 (유일한 저장소 접근 지점)
-│   ├─ menu-data.js    # 초기 메뉴 시드 데이터
+│   ├─ menu-data.js    # 카테고리·옵션·상태 라벨 상수, 초기 메뉴 시드 데이터
+│   ├─ ui.js           # DOM 생성 헬퍼(el), 금액/시간 포맷, 상태 배지, 토스트
 │   ├─ router.js       # 탭 전환, 해시 동기화, 관리자 인증 가드
 │   ├─ customer.js     # 메뉴 렌더링, 장바구니, 주문
 │   └─ admin.js        # 인증, 대시보드, 상태 변경
