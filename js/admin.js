@@ -83,7 +83,7 @@
 
     const lines = el('ul', { class: 'order-lines' });
     order.items.forEach(function (item) {
-      const options = [item.options && item.options.temp, item.options && item.options.size].filter(Boolean).join(' · ');
+      const options = Cafe.ui.describeOptions(item.options);
       lines.append(el('li', {}, [
         el('span', { text: item.name + (options ? ' (' + options + ')' : '') + ' × ' + item.quantity }),
         el('span', { text: formatPrice(item.unitPrice * item.quantity) })

@@ -15,17 +15,15 @@
 
   function hasOptions(menu) { return menu.category !== 'dessert'; }
 
-  function sizeExtra(sizeId) {
-    const size = Cafe.OPTIONS.size.find(function (s) { return s.id === sizeId; });
-    return size ? size.extra : 0;
-  }
+  const describeOptions = Cafe.ui.describeOptions;
 
-  function describeOptions(options) {
-    return [options.temp, options.size].filter(Boolean).join(' · ');
+  // 선택한 옵션의 추가금 합계
+  function optionsExtra(options) {
+    return Cafe.OPTIONS.reduce(function (sum, opt) { return options[opt.id] ? sum + opt.extra : sum; }, 0);
   }
 
   function cartKey(item) {
-    return [item.menuId, item.options.temp || '', item.options.size || ''].join('|');
+    return [item.menuId].concat(Cafe.OPTIONS.map(function (opt) { return item.options[opt.id] ? opt.id : ''; })).join('|');
   }
 
   function cartTotal(items) {
@@ -79,20 +77,21 @@
 
   /* ---------- 메뉴 상세 모달 ---------- */
 
-  function choiceGroup(legend, name, choices, selected, onChange) {
-    const fieldset = el('fieldset', { class: 'choice-group' }, [el('legend', { text: legend })]);
+  function optionGroup(selection, onChange) {
     const row = el('div', { class: 'choice-row' });
-    choices.forEach(function (choice) {
-      const input = el('input', { type: 'radio', name: name, value: choice.value, checked: choice.value === selected });
-      input.addEventListener('change', function () { onChange(choice.value); });
-      row.append(el('label', { class: 'choice' }, [input, el('span', { text: choice.label })]));
+    Cafe.OPTIONS.forEach(function (opt) {
+      const input = el('input', { type: 'checkbox', name: opt.id, value: opt.id });
+      input.addEventListener('change', function () {
+        selection[opt.id] = input.checked;
+        onChange();
+      });
+      row.append(el('label', { class: 'choice' }, [input, el('span', { text: opt.label + ' (+' + formatPrice(opt.extra) + ')' })]));
     });
-    fieldset.append(row);
-    return fieldset;
+    return el('fieldset', { class: 'choice-group' }, [el('legend', { text: '옵션' }), row]);
   }
 
   function openMenuDialog(menu) {
-    const selection = { temp: 'HOT', size: 'S', quantity: 1 };
+    const selection = { shot: false, syrup: false, quantity: 1 };
     const withOptions = hasOptions(menu);
     const total = el('strong', { class: 'dialog-total' });
     const quantity = el('span', { class: 'stepper-value', text: '1', 'aria-live': 'polite' });
@@ -101,7 +100,7 @@
     const cancel = el('button', { class: 'btn btn-secondary', type: 'button', text: '취소' });
     const add = el('button', { class: 'btn', type: 'button', text: '담기' });
 
-    function unitPrice() { return menu.price + (withOptions ? sizeExtra(selection.size) : 0); }
+    function unitPrice() { return menu.price + (withOptions ? optionsExtra(selection) : 0); }
     function update() {
       quantity.textContent = String(selection.quantity);
       minus.disabled = selection.quantity <= 1;
@@ -113,7 +112,7 @@
     plus.addEventListener('click', function () { selection.quantity += 1; update(); });
     cancel.addEventListener('click', function () { refs.menuDialog.close(); });
     add.addEventListener('click', function () {
-      const options = withOptions ? { temp: selection.temp, size: selection.size } : {};
+      const options = withOptions ? { shot: selection.shot, syrup: selection.syrup } : {};
       if (addToCart(menu.id, options, selection.quantity)) refs.menuDialog.close();
     });
 
@@ -126,13 +125,7 @@
         ])
       ])
     ];
-    if (withOptions) {
-      children.push(choiceGroup('온도', 'temp', Cafe.OPTIONS.temp.map(function (t) { return { value: t, label: t }; }),
-        selection.temp, function (v) { selection.temp = v; update(); }));
-      children.push(choiceGroup('사이즈', 'size', Cafe.OPTIONS.size.map(function (s) {
-        return { value: s.id, label: s.extra ? s.id + ' (+' + formatPrice(s.extra) + ')' : s.id };
-      }), selection.size, function (v) { selection.size = v; update(); }));
-    }
+    if (withOptions) children.push(optionGroup(selection, update));
     children.push(
       el('div', { class: 'dialog-row' }, [el('span', { text: '수량' }), el('div', { class: 'stepper' }, [minus, quantity, plus])]),
       el('div', { class: 'dialog-row' }, [el('span', { text: '금액' }), total]),
@@ -155,7 +148,7 @@
       renderMenu();
       return false;
     }
-    const unitPrice = menu.price + (options.size ? sizeExtra(options.size) : 0);
+    const unitPrice = menu.price + optionsExtra(options);
     const newItem = { menuId: menu.id, name: menu.name, options: options, unitPrice: unitPrice, quantity: quantity };
     const existing = state.cart.find(function (item) { return cartKey(item) === cartKey(newItem); });
     if (existing) existing.quantity = Math.min(MAX_QUANTITY, existing.quantity + quantity);

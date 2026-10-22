@@ -33,6 +33,13 @@
     return date.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
+  // 선택된 옵션을 '샷 추가 · 시럽 추가'처럼 표시한다. 이전 버전 주문의 온도·사이즈도 그대로 보여준다.
+  function describeOptions(options) {
+    const o = options || {};
+    const labels = Cafe.OPTIONS.filter(function (opt) { return o[opt.id]; }).map(function (opt) { return opt.label; });
+    return [o.temp, o.size].filter(Boolean).concat(labels).join(' · ');
+  }
+
   // 색만으로 구분하지 않도록 텍스트 라벨을 함께 표시한다.
   function statusBadge(status) {
     return el('span', { class: 'badge badge-' + status, text: Cafe.STATUS[status] || status });
@@ -47,5 +54,5 @@
     toastTimer = setTimeout(function () { node.hidden = true; }, 2600);
   }
 
-  Cafe.ui = { el: el, formatPrice: formatPrice, formatTime: formatTime, statusBadge: statusBadge, toast: toast };
+  Cafe.ui = { el: el, formatPrice: formatPrice, formatTime: formatTime, describeOptions: describeOptions, statusBadge: statusBadge, toast: toast };
 })();

@@ -3,7 +3,7 @@
 
   const Cafe = (window.Cafe = window.Cafe || {});
 
-  const SCHEMA_VERSION = 1;
+  const SCHEMA_VERSION = 2;
   const KEYS = {
     menu: 'cafe_menu',
     cart: 'cafe_cart',
@@ -64,10 +64,21 @@
     return valid;
   }
 
+  // v2: 메뉴가 5개 음료로 줄고 옵션이 샷/시럽으로 바뀌었다. 품절 상태는 id 기준으로 유지하고,
+  // 옵션 형식이 달라진 장바구니는 비운다. 기존 주문 기록은 그대로 둔다.
+  function migrateV1toV2() {
+    const soldOutById = {};
+    getMenu().forEach(function (item) { soldOutById[item.id] = item.soldOut === true; });
+    saveMenu(Cafe.MENU_SEED.map(function (item) {
+      return Object.assign({}, item, { soldOut: item.id in soldOutById ? soldOutById[item.id] : item.soldOut });
+    }));
+    saveCart([]);
+  }
+
   function init() {
     const version = read(localStorage, KEYS.schemaVersion, null);
     if (version !== SCHEMA_VERSION) {
-      // 현재는 v1만 있으므로 마이그레이션 없이 버전만 기록한다.
+      if (version === 1) migrateV1toV2();
       write(localStorage, KEYS.schemaVersion, SCHEMA_VERSION);
     }
     if (getMenu().length === 0) {
