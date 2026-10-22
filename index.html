@@ -40,20 +40,9 @@
     </section>
 
     <section id="view-admin" class="view" data-view-section="admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
-      <form class="card admin-login" id="admin-login" novalidate>
-        <h2 class="section-title">관리자 로그인</h2>
-        <div class="field">
-          <label for="admin-pin">비밀번호</label>
-          <input class="input" id="admin-pin" type="password" autocomplete="off" aria-describedby="admin-pin-error">
-          <p class="field-error" id="admin-pin-error" hidden>비밀번호가 맞지 않아요.</p>
-        </div>
-        <button class="btn btn-block" type="submit">로그인</button>
-      </form>
-
-      <div class="admin-dashboard" id="admin-dashboard" hidden>
+      <div class="admin-dashboard" id="admin-dashboard">
         <div class="admin-toolbar">
           <h2 class="section-title">주문 현황</h2>
-          <button class="btn btn-secondary btn-small" id="admin-logout" type="button">로그아웃</button>
         </div>
         <div class="summary-grid" id="admin-summary"></div>
         <div class="admin-layout">
@@ -70,7 +59,7 @@
               <ol class="rank-list" id="admin-popular"></ol>
             </section>
             <section class="card" aria-labelledby="stock-title">
-              <h2 class="section-title" id="stock-title">메뉴 품절 관리</h2>
+              <h2 class="section-title" id="stock-title">재고·품절 관리</h2>
               <ul class="stock-list" id="admin-menu"></ul>
             </section>
           </aside>

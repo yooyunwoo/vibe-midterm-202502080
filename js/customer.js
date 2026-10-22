@@ -8,6 +8,7 @@
   const storage = Cafe.storage;
 
   const MAX_QUANTITY = 99;
+  const LOW_STOCK = 5;
   const state = { menu: [], cart: [], category: 'all', lookupId: null };
   const refs = {};
 
@@ -28,6 +29,16 @@
 
   function cartTotal(items) {
     return items.reduce(function (sum, item) { return sum + item.unitPrice * item.quantity; }, 0);
+  }
+
+  function cartQuantity(menuId) {
+    return state.cart.filter(function (i) { return i.menuId === menuId; })
+      .reduce(function (sum, i) { return sum + i.quantity; }, 0);
+  }
+
+  // 장바구니에 이미 담긴 수량을 뺀, 더 담을 수 있는 수량
+  function availableStock(menu) {
+    return Math.max(0, menu.stock - cartQuantity(menu.id));
   }
 
   function findMenu(menuId) {
@@ -65,6 +76,7 @@
         el('div', { class: 'menu-emoji', 'aria-hidden': 'true', text: menu.image || '☕' }),
         el('h3', { class: 'menu-name', text: menu.name }),
         el('p', { class: 'menu-desc', text: menu.description || '' }),
+        !menu.soldOut && menu.stock <= LOW_STOCK ? el('p', { class: 'stock-note', text: menu.stock + '개 남음' }) : null,
         el('div', { class: 'menu-foot' }, [
           el('strong', { class: 'menu-price', text: formatPrice(menu.price) }),
           menu.soldOut
@@ -91,6 +103,11 @@
   }
 
   function openMenuDialog(menu) {
+    const maxQuantity = Math.min(MAX_QUANTITY, availableStock(menu));
+    if (maxQuantity < 1) {
+      toast('담을 수 있는 재고가 없어요. 장바구니에 이미 재고만큼 담겨 있어요.');
+      return;
+    }
     const selection = { shot: false, syrup: false, quantity: 1 };
     const withOptions = hasOptions(menu);
     const total = el('strong', { class: 'dialog-total' });
@@ -104,7 +121,7 @@
     function update() {
       quantity.textContent = String(selection.quantity);
       minus.disabled = selection.quantity <= 1;
-      plus.disabled = selection.quantity >= MAX_QUANTITY;
+      plus.disabled = selection.quantity >= maxQuantity;
       total.textContent = formatPrice(unitPrice() * selection.quantity);
     }
 
@@ -121,7 +138,8 @@
         el('div', { class: 'menu-emoji menu-emoji-small', 'aria-hidden': 'true', text: menu.image || '☕' }),
         el('div', {}, [
           el('h2', { class: 'section-title', id: 'menu-dialog-title', text: menu.name }),
-          el('p', { class: 'menu-desc', text: menu.description || '' })
+          el('p', { class: 'menu-desc', text: menu.description || '' }),
+          el('p', { class: 'muted', text: '남은 수량 ' + menu.stock + '개' })
         ])
       ])
     ];
@@ -148,6 +166,10 @@
       renderMenu();
       return false;
     }
+    if (cartQuantity(menu.id) + quantity > menu.stock) {
+      toast(menu.name + ' 재고가 부족해요. (남은 수량 ' + menu.stock + '개)');
+      return false;
+    }
     const unitPrice = menu.price + optionsExtra(options);
     const newItem = { menuId: menu.id, name: menu.name, options: options, unitPrice: unitPrice, quantity: quantity };
     const existing = state.cart.find(function (item) { return cartKey(item) === cartKey(newItem); });
@@ -162,7 +184,9 @@
   function changeQuantity(key, delta) {
     const item = state.cart.find(function (i) { return cartKey(i) === key; });
     if (!item) return;
-    item.quantity = Math.min(MAX_QUANTITY, Math.max(1, item.quantity + delta));
+    const menu = findMenu(item.menuId);
+    const limit = Math.min(MAX_QUANTITY, item.quantity + (menu ? availableStock(menu) : 0));
+    item.quantity = Math.min(limit, Math.max(1, item.quantity + delta));
     persistCart();
     renderCart();
   }
@@ -204,7 +228,7 @@
         el('div', { class: 'stepper' }, [
           el('button', { class: 'btn btn-secondary btn-round', type: 'button', text: '−', 'aria-label': item.name + ' 수량 줄이기', disabled: item.quantity <= 1, data: { action: 'dec', key: key } }),
           el('span', { class: 'stepper-value', text: String(item.quantity) }),
-          el('button', { class: 'btn btn-secondary btn-round', type: 'button', text: '+', 'aria-label': item.name + ' 수량 늘리기', disabled: item.quantity >= MAX_QUANTITY, data: { action: 'inc', key: key } })
+          el('button', { class: 'btn btn-secondary btn-round', type: 'button', text: '+', 'aria-label': item.name + ' 수량 늘리기', disabled: item.quantity >= MAX_QUANTITY || !menu || availableStock(menu) < 1, data: { action: 'inc', key: key } })
         ]),
         el('strong', { class: 'cart-item-sum', text: formatPrice(item.unitPrice * item.quantity) }),
         el('button', { class: 'btn btn-danger btn-small', type: 'button', text: '삭제', 'aria-label': item.name + ' 삭제', data: { action: 'remove', key: key } })
@@ -263,6 +287,14 @@
       return;
     }
 
+    const shortage = state.cart.map(function (item) { return findMenu(item.menuId); })
+      .filter(function (menu, index, menus) { return menus.indexOf(menu) === index && cartQuantity(menu.id) > menu.stock; });
+    if (shortage.length > 0) {
+      renderCart();
+      toast('재고가 부족해요: ' + shortage.map(function (m) { return m.name + ' (남은 ' + m.stock + '개)'; }).join(', '));
+      return;
+    }
+
     const order = {
       id: storage.nextOrderId(),
       createdAt: new Date().toISOString(),
@@ -272,12 +304,23 @@
       totalPrice: cartTotal(state.cart),
       status: 'received'
     };
+    // 재고를 먼저 차감하고, 주문 저장에 실패하면 차감을 되돌린다.
+    const originalMenu = storage.getMenu();
+    const deducted = originalMenu.map(function (menu) {
+      const sold = cartQuantity(menu.id);
+      if (sold === 0) return menu;
+      const stock = menu.stock - sold;
+      return Object.assign({}, menu, { stock: stock, soldOut: menu.soldOut || stock === 0 });
+    });
     const orders = storage.getOrders();
     orders.push(order);
-    if (!storage.saveOrders(orders)) {
+    if (!storage.saveMenu(deducted) || !storage.saveOrders(orders)) {
+      storage.saveMenu(originalMenu);
       toast('주문을 저장하지 못했어요. 브라우저 저장소를 확인해주세요.');
       return;
     }
+    state.menu = deducted;
+    renderMenu();
 
     state.cart = [];
     persistCart();

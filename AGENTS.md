@@ -23,9 +23,9 @@
 │   ├─ storage.js      # localStorage 접근 (유일한 저장소 접근 지점)
 │   ├─ menu-data.js    # 카테고리·옵션·상태 라벨 상수, 초기 메뉴 시드 데이터
 │   ├─ ui.js           # DOM 생성 헬퍼(el), 금액/시간 포맷, 상태 배지, 토스트
-│   ├─ router.js       # 탭 전환, 해시 동기화, 관리자 인증 가드
+│   ├─ router.js       # 탭 전환, 해시 동기화
 │   ├─ customer.js     # 메뉴 렌더링, 장바구니, 주문
-│   └─ admin.js        # 인증, 대시보드, 상태 변경
+│   └─ admin.js        # 대시보드, 상태 변경, 재고 관리
 ├─ PRD.md
 └─ AGENTS.md
 ```
@@ -65,7 +65,7 @@
 
 - `localStorage` 접근은 **`storage.js`를 통해서만** 한다. 다른 파일에서 `localStorage`를 직접 호출하지 않는다.
 - 모든 읽기/쓰기는 `try/catch`로 감싼다. JSON 파싱 실패, 접근 차단, 용량 초과 시 앱이 죽지 않아야 하며, 손상된 키는 초기값으로 복구한다. 쓰기 실패는 사용자에게 안내한다.
-- 키는 PRD.md 6.2의 표를 따른다: `cafe_menu`, `cafe_cart`, `cafe_orders`, `cafe_order_seq`, `cafe_active_view`, `cafe_schema_version`(localStorage), `cafe_admin_auth`(sessionStorage).
+- 키는 PRD.md 6.2의 표를 따른다: `cafe_menu`, `cafe_cart`, `cafe_orders`, `cafe_order_seq`, `cafe_active_view`, `cafe_schema_version`(모두 localStorage).
 - 스키마를 바꾸면 `cafe_schema_version`을 올리고 마이그레이션 코드를 둔다.
 - 데이터가 바뀌는 즉시 저장하고, 다른 창의 변경은 `storage` 이벤트로 반영한다.
 - 주문번호는 `cafe_order_seq`로 단조 증가시킨다. 주문 배열 길이로 번호를 만들지 않는다.
@@ -76,9 +76,9 @@
 - 주문 상태: `received → preparing → done`, `canceled`. 취소는 `done` 이전에만 가능. 역방향 전환 금지.
 - 장바구니가 비었거나 주문자 이름이 비어 있으면 주문할 수 없다.
 - 합계 = Σ(옵션 반영 단가 × 수량). 같은 메뉴·같은 옵션은 한 줄로 합산한다.
-- 품절 메뉴는 장바구니에 담을 수 없다.
+- 품절 메뉴는 장바구니에 담을 수 없다. 재고(`stock`)를 초과해 담거나 주문할 수 없고, 주문 확정 시 차감(0이면 자동 `soldOut`), 주문 취소 시 복구한다. 주문과 재고 저장은 한 묶음으로 처리하고 실패하면 재고를 되돌린다.
 - "오늘" 지표는 로컬 날짜 기준이며 취소 주문은 매출에서 제외한다.
-- 관리자 뷰의 주문 데이터는 인증 후 진입 시점에만 렌더링한다. 인증 상태는 `sessionStorage`에만 둔다.
+- 관리자 뷰는 로그인 없이 탭으로 바로 열린다(데모 환경 전제). 진입할 때마다 저장소의 최신 데이터로 다시 렌더링한다.
 
 ## 6. 디자인 규칙
 
@@ -119,7 +119,7 @@ PRD.md 5.4의 디자인 가이드를 따른다.
 - `storage.js` 밖에서 `localStorage` 직접 접근
 - 사용자 입력을 `innerHTML`로 렌더링
 - 색상 하드코딩, 그림자·그라데이션 사용
-- 관리자 비밀번호를 보안 수단으로 과신하는 표현 (UI 수준의 접근 제어임을 코드·문서에서 유지)
+- 관리자 화면을 보안이 적용된 것처럼 표현하는 문구 (로그인이 없는 데모 환경임을 문서에서 유지)
 - 사용자 승인 없는 파일 삭제
 - `main` 브랜치 강제 푸시(`--force`), 커밋 훅 우회(`--no-verify`)
 

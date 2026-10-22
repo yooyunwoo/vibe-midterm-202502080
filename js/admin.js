@@ -7,11 +7,11 @@
   const toast = Cafe.ui.toast;
   const storage = Cafe.storage;
 
-  // 데모용 비밀번호. 클라이언트 코드라 보안 수단이 아니라 화면 접근을 구분하는 용도다.
-  const ADMIN_PIN = '1234';
   const NEXT_STATUS = { received: 'preparing', preparing: 'done' };
-  const NEXT_LABEL = { received: '준비 시작', preparing: '완료 처리' };
+  const NEXT_LABEL = { received: '제조 시작', preparing: '제조 완료' };
   const CANCELABLE = ['received', 'preparing'];
+  const MAX_STOCK = 999;
+  const LOW_STOCK = 5;
   const FILTERS = [{ id: 'all', label: '전체' }].concat(
     Object.keys(Cafe.STATUS).map(function (id) { return { id: id, label: Cafe.STATUS[id] }; })
   );
@@ -132,13 +132,30 @@
   function renderMenuStock() {
     refs.menu.replaceChildren();
     storage.getMenu().forEach(function (menu) {
+      // 재고가 0이면 재고를 먼저 채워야 판매를 재개할 수 있다.
+      const noStock = menu.stock === 0;
       refs.menu.append(el('li', {}, [
-        el('span', { class: menu.soldOut ? 'is-soldout-name' : '', text: menu.name }),
+        el('div', { class: 'stock-name' }, [
+          el('span', { class: menu.soldOut ? 'is-soldout-name' : '', text: menu.name }),
+          menu.soldOut ? el('span', { class: 'badge badge-soldout', text: '품절' })
+            : menu.stock <= LOW_STOCK ? el('span', { class: 'badge badge-received', text: '재고 부족' }) : null
+        ]),
+        el('input', {
+          class: 'input stock-input',
+          type: 'number',
+          min: '0',
+          max: String(MAX_STOCK),
+          value: String(menu.stock),
+          inputmode: 'numeric',
+          'aria-label': menu.name + ' 재고 수량',
+          data: { action: 'set-stock', id: menu.id }
+        }),
         el('button', {
           class: 'btn btn-small ' + (menu.soldOut ? '' : 'btn-secondary'),
           type: 'button',
           text: menu.soldOut ? '판매 재개' : '품절 처리',
           'aria-label': menu.name + (menu.soldOut ? ' 판매 재개' : ' 품절 처리'),
+          disabled: menu.soldOut && noStock,
           data: { action: 'stock', id: menu.id }
         })
       ]));
@@ -152,26 +169,6 @@
     renderOrders(orders);
     renderPopular(orders);
     renderMenuStock();
-  }
-
-  // 인증 전에는 주문 데이터를 DOM에 올리지 않는다.
-  function clearDashboard() {
-    ['summary', 'filters', 'orders', 'popular', 'menu'].forEach(function (name) { refs[name].replaceChildren(); });
-  }
-
-  function showLogin() {
-    clearDashboard();
-    refs.dashboard.hidden = true;
-    refs.login.hidden = false;
-    refs.pinInput.value = '';
-    refs.pinError.hidden = true;
-    refs.pinInput.setAttribute('aria-invalid', 'false');
-  }
-
-  function showDashboard() {
-    refs.login.hidden = true;
-    refs.dashboard.hidden = false;
-    renderDashboard();
   }
 
   /* ---------- 동작 ---------- */
@@ -188,39 +185,49 @@
     }
     order.status = nextStatus;
     if (!storage.saveOrders(orders)) toast('주문 상태를 저장하지 못했어요.');
+    else if (nextStatus === 'canceled') restoreStock(order);
     renderDashboard();
+  }
+
+  // 취소된 주문의 수량만큼 재고를 되돌린다. 재고가 0이어서 품절이던 메뉴만 다시 판매 상태로 돌린다.
+  function restoreStock(order) {
+    const menu = storage.getMenu();
+    order.items.forEach(function (item) {
+      const target = menu.find(function (m) { return m.id === item.menuId; });
+      if (!target) return;
+      if (target.stock === 0) target.soldOut = false;
+      target.stock = Math.min(MAX_STOCK, target.stock + item.quantity);
+    });
+    if (!storage.saveMenu(menu)) toast('재고를 되돌리지 못했어요.');
+  }
+
+  function setStock(menuId, value) {
+    const menu = storage.getMenu();
+    const item = menu.find(function (m) { return m.id === menuId; });
+    if (!item) return;
+    const stock = Number(value);
+    if (value === '' || !Number.isInteger(stock) || stock < 0 || stock > MAX_STOCK) {
+      toast('재고는 0~' + MAX_STOCK + ' 사이의 정수로 입력해주세요.');
+      renderMenuStock();
+      return;
+    }
+    item.stock = stock;
+    item.soldOut = stock === 0;
+    if (!storage.saveMenu(menu)) toast('재고를 저장하지 못했어요.');
+    renderMenuStock();
   }
 
   function toggleSoldOut(menuId) {
     const menu = storage.getMenu();
     const item = menu.find(function (m) { return m.id === menuId; });
     if (!item) return;
+    if (item.soldOut && item.stock === 0) return;
     item.soldOut = !item.soldOut;
     if (!storage.saveMenu(menu)) toast('메뉴를 저장하지 못했어요.');
     renderMenuStock();
   }
 
-  function onLogin(event) {
-    event.preventDefault();
-    if (refs.pinInput.value !== ADMIN_PIN) {
-      refs.pinError.hidden = false;
-      refs.pinInput.setAttribute('aria-invalid', 'true');
-      refs.pinInput.focus();
-      return;
-    }
-    storage.setAdminAuthed(true);
-    showDashboard();
-  }
-
-  function onLogout() {
-    storage.setAdminAuthed(false);
-    showLogin();
-    refs.pinInput.focus();
-  }
-
   function bindEvents() {
-    refs.login.addEventListener('submit', onLogin);
-    refs.logout.addEventListener('click', onLogout);
     refs.filters.addEventListener('click', function (event) {
       const button = event.target.closest('[data-filter]');
       if (!button) return;
@@ -246,14 +253,17 @@
       const button = event.target.closest('[data-action="stock"]');
       if (button) toggleSoldOut(button.dataset.id);
     });
+    refs.menu.addEventListener('change', function (event) {
+      const input = event.target.closest('[data-action="set-stock"]');
+      if (input) setStock(input.dataset.id, input.value.trim());
+    });
     storage.onExternalChange(function () {
-      if (!refs.view.hidden && storage.isAdminAuthed()) renderDashboard();
+      if (!refs.view.hidden) renderDashboard();
     });
   }
 
   function init() {
-    ['view-admin:view', 'admin-login:login', 'admin-pin:pinInput', 'admin-pin-error:pinError', 'admin-dashboard:dashboard',
-      'admin-logout:logout', 'admin-summary:summary', 'admin-filters:filters', 'admin-search:search', 'admin-orders:orders',
+    ['view-admin:view', 'admin-summary:summary', 'admin-filters:filters', 'admin-search:search', 'admin-orders:orders',
       'admin-popular:popular', 'admin-menu:menu'
     ].forEach(function (pair) {
       const parts = pair.split(':');
@@ -262,16 +272,7 @@
     bindEvents();
   }
 
-  Cafe.admin = {
-    enter: function () {
-      if (storage.isAdminAuthed()) showDashboard();
-      else {
-        showLogin();
-        refs.pinInput.focus();
-      }
-    },
-    leave: clearDashboard
-  };
+  Cafe.admin = { enter: renderDashboard };
   Cafe.router.register('admin', Cafe.admin);
   init();
 })();

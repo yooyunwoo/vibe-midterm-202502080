@@ -3,15 +3,14 @@
 
   const Cafe = (window.Cafe = window.Cafe || {});
 
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const KEYS = {
     menu: 'cafe_menu',
     cart: 'cafe_cart',
     orders: 'cafe_orders',
     orderSeq: 'cafe_order_seq',
     activeView: 'cafe_active_view',
-    schemaVersion: 'cafe_schema_version',
-    adminAuth: 'cafe_admin_auth'
+    schemaVersion: 'cafe_schema_version'
   };
 
   // 저장소 접근이 막혀 있어도(시크릿 모드 등) 앱이 죽지 않도록 모든 접근을 감싼다.
@@ -39,7 +38,7 @@
 
   function isValidMenu(item) {
     return isObject(item) && typeof item.id === 'string' && typeof item.name === 'string' &&
-      Number.isInteger(item.price) && item.price >= 0;
+      Number.isInteger(item.price) && item.price >= 0 && Number.isInteger(item.stock) && item.stock >= 0;
   }
 
   function isValidCartItem(item) {
@@ -75,10 +74,25 @@
     saveCart([]);
   }
 
+  // v3: 메뉴에 재고(stock)가 생겼다. 기존 메뉴는 품절이면 0, 아니면 시드 재고로 채운다.
+  // stock이 없는 기존 데이터는 getMenu()의 검증에서 걸러지므로 원본을 직접 읽는다.
+  function migrateV2toV3() {
+    const old = read(localStorage, KEYS.menu, []);
+    if (!Array.isArray(old)) return;
+    const seedById = {};
+    Cafe.MENU_SEED.forEach(function (item) { seedById[item.id] = item; });
+    saveMenu(old.filter(isObject).map(function (item) {
+      const seed = seedById[item.id];
+      const stock = item.soldOut === true ? 0 : (seed ? seed.stock : 10);
+      return Object.assign({}, item, { stock: stock });
+    }));
+  }
+
   function init() {
     const version = read(localStorage, KEYS.schemaVersion, null);
     if (version !== SCHEMA_VERSION) {
       if (version === 1) migrateV1toV2();
+      if (version === 1 || version === 2) migrateV2toV3();
       write(localStorage, KEYS.schemaVersion, SCHEMA_VERSION);
     }
     if (getMenu().length === 0) {
@@ -107,13 +121,6 @@
   function getActiveView() { return read(localStorage, KEYS.activeView, null); }
   function setActiveView(view) { return write(localStorage, KEYS.activeView, view); }
 
-  function isAdminAuthed() { return read(sessionStorage, KEYS.adminAuth, false) === true; }
-  function setAdminAuthed(authed) {
-    if (authed) return write(sessionStorage, KEYS.adminAuth, true);
-    try { sessionStorage.removeItem(KEYS.adminAuth); } catch (e) { /* 무시 */ }
-    return true;
-  }
-
   // 다른 창에서 바뀐 데이터를 감지한다. 콜백에는 변경된 키 이름이 전달된다.
   function onExternalChange(callback) {
     window.addEventListener('storage', function (event) {
@@ -133,8 +140,6 @@
     nextOrderId: nextOrderId,
     getActiveView: getActiveView,
     setActiveView: setActiveView,
-    isAdminAuthed: isAdminAuthed,
-    setAdminAuthed: setAdminAuthed,
     onExternalChange: onExternalChange
   };
 })();

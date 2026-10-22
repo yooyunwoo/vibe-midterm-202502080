@@ -42,10 +42,7 @@
   function initialView() {
     const fromHash = VIEW_BY_HASH[location.hash];
     if (fromHash) return fromHash;
-    const stored = Cafe.storage.getActiveView();
-    // 인증이 없으면 관리자 탭 대신 고객 탭으로 복원한다.
-    if (stored === 'admin' && !Cafe.storage.isAdminAuthed()) return 'customer';
-    return stored === 'admin' ? 'admin' : 'customer';
+    return Cafe.storage.getActiveView() === 'admin' ? 'admin' : 'customer';
   }
 
   function start() {
